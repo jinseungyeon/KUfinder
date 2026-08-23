@@ -3,6 +3,7 @@ import { CheckCircle2, LoaderCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ImageUploader from '../components/ImageUploader'
 import LocationSelector from '../components/LocationSelector'
+import BackButton from '../components/BackButton'
 import { createFoundItem } from '../api/items'
 import { CATEGORY_LABEL, type ItemCategory, type LocationInfo } from '../types/item'
 
@@ -40,6 +41,7 @@ export default function FoundRegisterPage() {
 
   return (
     <main className="content-wrap max-w-3xl">
+      <BackButton />
       <div className="mb-6">
         <h1 className="text-3xl font-black">습득물 등록</h1>
         <p className="mt-2 text-zinc-600">주운 물건의 특징과 발견 장소를 등록해주세요.</p>

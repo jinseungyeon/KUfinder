@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, MapPin, Sparkles } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getMatches } from '../api/matching'
+import BackButton from '../components/BackButton'
 import CategoryBadge from '../components/CategoryBadge'
 import { mockFoundItems } from '../mock/items'
 import type { MatchResult } from '../types/item'
@@ -18,13 +19,14 @@ export default function MatchResultPage() {
   const current = matches[index]
   const item = useMemo(() => current ? mockFoundItems.find((x) => x.id === current.foundItemId) : undefined, [current])
 
-  if (!current || !item) return <main className="content-wrap"><div className="card p-8 text-center">매칭 결과를 불러오는 중...</div></main>
+  if (!current || !item) return <main className="content-wrap"><BackButton /><div className="card p-8 text-center">매칭 결과를 불러오는 중...</div></main>
 
   const percent = Math.round(current.score * 100)
   const highConfidence = current.score >= 0.8
 
   return (
     <main className="content-wrap max-w-3xl">
+      <BackButton />
       <div className="mb-6">
         <div className="flex items-center gap-2 text-ku-700"><Sparkles size={18} /><span className="text-sm font-bold">AI 검색 결과</span></div>
         <h1 className="mt-2 text-3xl font-black">비슷한 물건을 찾았어요</h1>

@@ -3,6 +3,7 @@ import { LoaderCircle, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ImageUploader from '../components/ImageUploader'
 import LocationSelector from '../components/LocationSelector'
+import BackButton from '../components/BackButton'
 import { createLostItem } from '../api/items'
 import { CATEGORY_LABEL, type ItemCategory, type LocationInfo } from '../types/item'
 
@@ -33,6 +34,7 @@ export default function LostRegisterPage() {
 
   return (
     <main className="content-wrap max-w-3xl">
+      <BackButton />
       <div className="mb-6">
         <h1 className="text-3xl font-black">분실물 찾기</h1>
         <p className="mt-2 text-zinc-600">기억나는 정보만 입력해도 됩니다. 사진 또는 설명 중 하나는 필요합니다.</p>

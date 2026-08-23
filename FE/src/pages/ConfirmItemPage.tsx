@@ -1,5 +1,6 @@
 import { ShieldCheck } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import BackButton from '../components/BackButton'
 import { mockFoundItems } from '../mock/items'
 
 export default function ConfirmItemPage() {
@@ -10,6 +11,7 @@ export default function ConfirmItemPage() {
 
   return (
     <main className="content-wrap max-w-2xl">
+      <BackButton />
       <section className="card overflow-hidden">
         <div className="p-6 sm:p-8">
           <div className="flex items-center gap-2 text-ku-700"><ShieldCheck size={19} /><span className="text-sm font-bold">최종 확인</span></div>
