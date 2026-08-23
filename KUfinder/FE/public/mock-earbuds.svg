@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
-  <rect width="900" height="600" fill="#f2f2f4"/>
-  <rect x="270" y="160" width="360" height="280" rx="85" fill="#222226"/>
-  <rect x="305" y="195" width="290" height="210" rx="65" fill="#36363b"/>
-  <circle cx="390" cy="290" r="48" fill="#151518"/>
-  <circle cx="510" cy="290" r="48" fill="#151518"/>
-  <rect x="421" y="370" width="58" height="24" rx="12" fill="#f8f8f8"/>
-  <text x="450" y="515" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#6b6b73">Mock found-item photo</text>
-</svg>
