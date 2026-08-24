@@ -1,0 +1,1 @@
+"""KU-finder backend package."""
