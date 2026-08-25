@@ -1,11 +1,15 @@
 export type ItemCategory =
-  | 'wallet'
-  | 'smartphone'
-  | 'headphones'
-  | 'clothing'
-  | 'bag'
-  | 'accessory'
-  | 'etc'
+  | 'WALLET'
+  | 'PHONE'
+  | 'ELECTRONICS'
+  | 'CARD'
+  | 'KEY'
+  | 'BAG'
+  | 'CLOTHING'
+  | 'UMBRELLA'
+  | 'STATIONERY'
+  | 'ACCESSORY'
+  | 'OTHER'
 
 export interface LocationInfo {
   name: string
@@ -15,12 +19,12 @@ export interface LocationInfo {
 }
 
 export interface ContactInfo {
-  public: 0 | 1
+  public: boolean
   detail: string
 }
 
 export interface FoundItem {
-  id: number
+  id: string
   createdAt: string
   category: ItemCategory
   description: string
@@ -32,7 +36,7 @@ export interface FoundItem {
 }
 
 export interface LostItem {
-  id?: number
+  id?: string
   createdAt?: string
   category: ItemCategory
   description: string
@@ -43,19 +47,23 @@ export interface LostItem {
 }
 
 export interface MatchResult {
-  lostItemId: number | string
-  foundItemId: number
+  lostItemId: string
+  foundItemId: string
   score: number
   reasons: string[]
   question?: string
 }
 
 export const CATEGORY_LABEL: Record<ItemCategory, string> = {
-  wallet: '지갑/카드',
-  smartphone: '스마트폰',
-  headphones: '이어폰',
-  clothing: '의류',
-  bag: '가방',
-  accessory: '액세서리',
-  etc: '기타',
+  WALLET: '지갑',
+  PHONE: '스마트폰',
+  ELECTRONICS: '전자기기',
+  CARD: '카드/학생증',
+  KEY: '열쇠',
+  BAG: '가방',
+  CLOTHING: '의류',
+  UMBRELLA: '우산',
+  STATIONERY: '문구류',
+  ACCESSORY: '액세서리',
+  OTHER: '기타',
 }

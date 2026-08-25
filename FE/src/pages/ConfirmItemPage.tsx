@@ -1,13 +1,26 @@
+import { useEffect, useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { getFoundItem } from '../api/items'
 import BackButton from '../components/BackButton'
-import { mockFoundItems } from '../mock/items'
+import type { FoundItem } from '../types/item'
 
 export default function ConfirmItemPage() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
-  const foundItemId = Number(params.get('foundItemId') ?? 1)
-  const item = mockFoundItems.find((x) => x.id === foundItemId) ?? mockFoundItems[0]
+  const foundItemId = params.get('foundItemId')
+  const [item, setItem] = useState<FoundItem>()
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!foundItemId) return
+    getFoundItem(foundItemId)
+      .then(setItem)
+      .catch(() => setError('습득물 정보를 불러오지 못했습니다.'))
+  }, [foundItemId])
+
+  if (error) return <main className="content-wrap"><BackButton /><div className="card p-8 text-center">{error}</div></main>
+  if (!item) return <main className="content-wrap"><BackButton /><div className="card p-8 text-center">습득물 정보를 불러오는 중...</div></main>
 
   return (
     <main className="content-wrap max-w-2xl">

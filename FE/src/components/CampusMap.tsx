@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { mockFoundItems, mockLostItems } from '../mock/items'
+import { getFoundItems, getLostItems } from '../api/items'
 import { CATEGORY_LABEL, type FoundItem, type ItemCategory, type LostItem } from '../types/item'
 import { categoryIcon } from './CategoryBadge'
 
@@ -49,13 +49,17 @@ const CAMPUS_BOUNDS = {
   east: 127.0368,
 }
 const CATEGORY_MARKER_COLOR: Record<ItemCategory, string> = {
-  wallet: '#7a0029',
-  smartphone: '#401408',
-  headphones: '#401408',
-  clothing: '#275738',
-  bag: '#5f3b16',
-  accessory: '#8a5b00',
-  etc: '#3f3f46',
+  WALLET: '#7a0029',
+  PHONE: '#401408',
+  ELECTRONICS: '#401408',
+  CARD: '#7a0029',
+  KEY: '#8a5b00',
+  BAG: '#5f3b16',
+  CLOTHING: '#275738',
+  UMBRELLA: '#25636f',
+  STATIONERY: '#5b5b6f',
+  ACCESSORY: '#8a5b00',
+  OTHER: '#3f3f46',
 }
 let kakaoMapsPromise: Promise<KakaoMaps> | null = null
 
@@ -194,15 +198,35 @@ export default function CampusMap({ filter = 'all' }: Props) {
   const detailOverlayRef = useRef<KakaoMapOverlay | null>(null)
   const [kakaoMaps, setKakaoMaps] = useState<KakaoMaps | null>(null)
   const [mode, setMode] = useState<MapMode>('found')
+  const [foundItems, setFoundItems] = useState<FoundItem[]>([])
+  const [lostItems, setLostItems] = useState<LostItem[]>([])
   const [selected, setSelected] = useState<MapItem | null>(null)
   const [error, setError] = useState('')
   const items = useMemo(
     () => {
-      const source = mode === 'found' ? mockFoundItems : mockLostItems
+      const source = mode === 'found' ? foundItems : lostItems
       return source.filter((item) => filter === 'all' || item.category === filter)
     },
-    [filter, mode],
+    [filter, foundItems, lostItems, mode],
   )
+
+  useEffect(() => {
+    let cancelled = false
+
+    Promise.all([getFoundItems(), getLostItems()])
+      .then(([found, lost]) => {
+        if (cancelled) return
+        setFoundItems(found)
+        setLostItems(lost)
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setError(err.message)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -291,7 +315,7 @@ export default function CampusMap({ filter = 'all' }: Props) {
         <dd class="font-medium">${location.name}</dd>
         <dt class="text-zinc-500">${mode === 'found' ? '발견 날짜' : '분실 날짜'}</dt>
         <dd class="font-medium">${getItemDate(selected)}</dd>
-        ${selected.contact?.public === 1 ? `<dt class="text-zinc-500">연락수단</dt><dd class="font-medium">${selected.contact.detail}</dd>` : ''}
+        ${selected.contact?.public ? `<dt class="text-zinc-500">연락수단</dt><dd class="font-medium">${selected.contact.detail}</dd>` : ''}
       </dl>
       ${mode === 'lost'
         ? `<p class="mt-4 rounded-xl bg-zinc-50 p-3 text-xs leading-5 text-zinc-500" style="box-sizing:border-box;max-width:100%;overflow-wrap:anywhere;white-space:normal;word-break:keep-all;">${selected.description}</p>`

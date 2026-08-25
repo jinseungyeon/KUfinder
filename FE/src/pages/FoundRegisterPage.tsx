@@ -4,11 +4,15 @@ import { useNavigate } from 'react-router-dom'
 import ImageUploader from '../components/ImageUploader'
 import LocationSelector from '../components/LocationSelector'
 import BackButton from '../components/BackButton'
-import { createFoundItem } from '../api/items'
+import { createFoundItem, uploadImage } from '../api/items'
 import { CATEGORY_LABEL, type ItemCategory, type LocationInfo } from '../types/item'
 
 const defaultLocation: LocationInfo = { name: '안암캠퍼스', latitude: 37.58704982196241, longitude: 127.02929004580606 }
 const today = new Date().toISOString().slice(0, 10)
+
+function dateToApiDateTime(date: string) {
+  return `${date}T00:00:00+09:00`
+}
 
 export default function FoundRegisterPage() {
   const navigate = useNavigate()
@@ -27,18 +31,20 @@ export default function FoundRegisterPage() {
     if (!image) return alert('습득물 사진을 등록해주세요.')
     setLoading(true)
     try {
-      const form = new FormData()
-      form.append('locationName', location.name)
-      form.append('locationDescription', location.description ?? '')
-      form.append('latitude', String(location.latitude))
-      form.append('longitude', String(location.longitude))
-      form.append('category', category)
-      form.append('description', description)
-      form.append('foundDate', foundDate)
-      form.append('contact', contact)
-      form.append('storagePlace', storagePlace)
-      if (image) form.append('image', image)
-      const result = await createFoundItem(form)
+      const imageUrl = await uploadImage(image)
+      const result = await createFoundItem({
+        category,
+        description,
+        imageUrl,
+        foundLocation: {
+          name: location.name,
+          latitude: location.latitude,
+          longitude: location.longitude,
+        },
+        foundDate: dateToApiDateTime(foundDate),
+        storagePlace: storagePlace || undefined,
+        contact: contact ? { public: true, detail: contact } : undefined,
+      })
       navigate(`/matching?foundItemId=${result.id}`)
     } finally {
       setLoading(false)

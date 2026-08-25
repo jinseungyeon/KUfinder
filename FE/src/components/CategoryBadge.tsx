@@ -1,15 +1,19 @@
-import { Backpack, CircleEllipsis, Gem, Headphones, Shirt, Smartphone, WalletCards } from 'lucide-react'
+import { Backpack, CircleEllipsis, CreditCard, Gem, Headphones, KeyRound, PencilRuler, Shirt, Smartphone, Umbrella, WalletCards } from 'lucide-react'
 import { CATEGORY_LABEL, type ItemCategory } from '../types/item'
 
 export function categoryIcon(category: ItemCategory, size = 20) {
   const props = { size }
   switch (category) {
-    case 'wallet': return <WalletCards {...props} />
-    case 'smartphone': return <Smartphone {...props} />
-    case 'headphones': return <Headphones {...props} />
-    case 'clothing': return <Shirt {...props} />
-    case 'bag': return <Backpack {...props} />
-    case 'accessory': return <Gem {...props} />
+    case 'WALLET': return <WalletCards {...props} />
+    case 'PHONE': return <Smartphone {...props} />
+    case 'ELECTRONICS': return <Headphones {...props} />
+    case 'CARD': return <CreditCard {...props} />
+    case 'KEY': return <KeyRound {...props} />
+    case 'BAG': return <Backpack {...props} />
+    case 'CLOTHING': return <Shirt {...props} />
+    case 'UMBRELLA': return <Umbrella {...props} />
+    case 'STATIONERY': return <PencilRuler {...props} />
+    case 'ACCESSORY': return <Gem {...props} />
     default: return <CircleEllipsis {...props} />
   }
 }

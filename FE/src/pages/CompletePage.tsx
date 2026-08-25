@@ -1,12 +1,25 @@
+import { useEffect, useState } from 'react'
 import { CheckCircle2, MapPin, MessageCircle } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { getFoundItem } from '../api/items'
 import BackButton from '../components/BackButton'
-import { mockFoundItems } from '../mock/items'
+import type { FoundItem } from '../types/item'
 
 export default function CompletePage() {
   const [params] = useSearchParams()
-  const foundItemId = Number(params.get('foundItemId') ?? 1)
-  const item = mockFoundItems.find((x) => x.id === foundItemId) ?? mockFoundItems[0]
+  const foundItemId = params.get('foundItemId')
+  const [item, setItem] = useState<FoundItem>()
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!foundItemId) return
+    getFoundItem(foundItemId)
+      .then(setItem)
+      .catch(() => setError('습득물 정보를 불러오지 못했습니다.'))
+  }, [foundItemId])
+
+  if (error) return <main className="content-wrap"><BackButton /><div className="card p-8 text-center">{error}</div></main>
+  if (!item) return <main className="content-wrap"><BackButton /><div className="card p-8 text-center">습득물 정보를 불러오는 중...</div></main>
 
   return (
     <main className="content-wrap min-h-[calc(100vh-64px)] py-12">

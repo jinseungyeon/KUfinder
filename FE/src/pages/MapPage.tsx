@@ -5,7 +5,7 @@ import { CATEGORY_LABEL, type ItemCategory } from '../types/item'
 
 export default function MapPage() {
   const [filter, setFilter] = useState<ItemCategory | 'all'>('all')
-  const categories: (ItemCategory | 'all')[] = ['all', 'wallet', 'smartphone', 'headphones', 'clothing', 'bag', 'accessory', 'etc']
+  const categories: (ItemCategory | 'all')[] = ['all', 'WALLET', 'PHONE', 'ELECTRONICS', 'CARD', 'KEY', 'BAG', 'CLOTHING', 'UMBRELLA', 'STATIONERY', 'ACCESSORY', 'OTHER']
 
   return (
     <main className="content-wrap">

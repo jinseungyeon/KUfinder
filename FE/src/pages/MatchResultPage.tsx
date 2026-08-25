@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ArrowRight, CheckCircle2, MapPin, Sparkles } from 'lucide-react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { getFoundItem, getLostItem } from '../api/items'
 import { getMatches, getMatchesForFoundItem } from '../api/matching'
 import BackButton from '../components/BackButton'
 import CategoryBadge from '../components/CategoryBadge'
-import { mockFoundItems, mockLostItems } from '../mock/items'
-import type { MatchResult } from '../types/item'
+import type { FoundItem, LostItem, MatchResult } from '../types/item'
 
 export default function MatchResultPage() {
   const { lostItemId = 'demo' } = useParams()
@@ -13,7 +13,9 @@ export default function MatchResultPage() {
   const navigate = useNavigate()
   const [matches, setMatches] = useState<MatchResult[]>([])
   const [loading, setLoading] = useState(true)
+  const [itemLoading, setItemLoading] = useState(false)
   const [error, setError] = useState('')
+  const [item, setItem] = useState<FoundItem | LostItem>()
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState('')
   const foundItemId = params.get('foundItemId')
@@ -45,11 +47,29 @@ export default function MatchResultPage() {
   }, [foundItemId, isFoundFlow, lostItemId])
 
   const current = matches[index]
-  const item = useMemo(() => {
-    if (!current) return undefined
-    return isFoundFlow
-      ? mockLostItems.find((x) => String(x.id) === String(current.lostItemId))
-      : mockFoundItems.find((x) => x.id === current.foundItemId)
+
+  useEffect(() => {
+    let active = true
+    setItem(undefined)
+    if (!current) return
+
+    setError('')
+    setItemLoading(true)
+    const request = isFoundFlow ? getLostItem(current.lostItemId) : getFoundItem(current.foundItemId)
+    request
+      .then((result) => {
+        if (active) setItem(result)
+      })
+      .catch(() => {
+        if (active) setError('매칭 후보 정보를 불러오지 못했습니다.')
+      })
+      .finally(() => {
+        if (active) setItemLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
   }, [current, isFoundFlow])
 
   if (loading) {
@@ -80,6 +100,10 @@ export default function MatchResultPage() {
         </section>
       </main>
     )
+  }
+
+  if (itemLoading) {
+    return <main className="content-wrap"><BackButton /><div className="card p-8 text-center">매칭 후보 정보를 불러오는 중...</div></main>
   }
 
   if (!current || !item) return <main className="content-wrap"><BackButton /><div className="card p-8 text-center">매칭 후보 정보를 찾지 못했습니다.</div></main>

@@ -4,11 +4,15 @@ import { useNavigate } from 'react-router-dom'
 import ImageUploader from '../components/ImageUploader'
 import LocationSelector from '../components/LocationSelector'
 import BackButton from '../components/BackButton'
-import { createLostItem } from '../api/items'
+import { createLostItem, uploadImage } from '../api/items'
 import { CATEGORY_LABEL, type ItemCategory, type LocationInfo } from '../types/item'
 
 const defaultLocation: LocationInfo = { name: '안암캠퍼스', latitude: 37.58704982196241, longitude: 127.02929004580606 }
 const today = new Date().toISOString().slice(0, 10)
+
+function dateToApiDateTime(date: string) {
+  return `${date}T00:00:00+09:00`
+}
 
 export default function LostRegisterPage() {
   const navigate = useNavigate()
@@ -23,18 +27,22 @@ export default function LostRegisterPage() {
   async function submit(e: FormEvent) {
     e.preventDefault()
     if (!category) return alert('카테고리를 선택해주세요.')
-    if (!description.trim() && !image) return alert('사진 또는 설명 중 하나는 입력해주세요.')
+    if (!description.trim()) return alert('물건 설명을 입력해주세요.')
     setLoading(true)
     try {
+      const imageUrl = image ? await uploadImage(image) : undefined
       const result = await createLostItem({
         category,
         description,
-        lostLocation: location,
-        lostDate,
-        contact: contact ? { public: 0, detail: contact } : undefined,
+        imageUrl,
+        lostLocation: {
+          name: location.name,
+          latitude: location.latitude,
+          longitude: location.longitude,
+        },
+        lostDate: dateToApiDateTime(lostDate),
+        contact: contact ? { public: false, detail: contact } : undefined,
       })
-      // 실제 백엔드 연결 시 image는 multipart 업로드 구조로 조정하면 됩니다.
-      void image
       navigate(`/matching?lostItemId=${result.id}`)
     } finally {
       setLoading(false)
@@ -72,7 +80,7 @@ export default function LostRegisterPage() {
 
         <div>
           <label className="label">물건 설명</label>
-          <textarea className="input min-h-36 resize-y" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="예: 검정색 무선 이어폰, 케이스에 흰색 스티커가 붙어 있음" />
+          <textarea className="input min-h-36 resize-y" required value={description} onChange={(e) => setDescription(e.target.value)} placeholder="예: 검정색 무선 이어폰, 케이스에 흰색 스티커가 붙어 있음" />
         </div>
 
         <ImageUploader onChange={setImage} />
