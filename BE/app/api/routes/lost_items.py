@@ -8,7 +8,12 @@ from app.api.deps import DBSession
 from app.core.enums import ItemCategory
 from app.db.models import LostItem
 from app.schemas.common import Contact, Location
-from app.schemas.lost_item import LostItemCreate, LostItemResponse, LostItemUpdate
+from app.schemas.lost_item import (
+    LostItemCreate,
+    LostItemMapResponse,
+    LostItemResponse,
+    LostItemUpdate,
+)
 
 router = APIRouter()
 
@@ -64,6 +69,30 @@ async def list_lost_items(
         statement = statement.where(LostItem.category == category.value)
     statement = statement.order_by(LostItem.created_at.desc()).limit(limit).offset(offset)
     return [_to_response(item) for item in (await db.scalars(statement)).all()]
+
+
+@router.get("/map", response_model=list[LostItemMapResponse])
+async def list_lost_item_markers(
+    db: DBSession,
+    category: Annotated[ItemCategory | None, Query()] = None,
+) -> list[LostItemMapResponse]:
+    statement = select(LostItem)
+    if category:
+        statement = statement.where(LostItem.category == category.value)
+    statement = statement.order_by(LostItem.lost_date.desc()).limit(500)
+    return [
+        LostItemMapResponse(
+            id=item.id,
+            category=item.category,
+            lost_location=Location(
+                name=item.lost_location_name,
+                latitude=item.lost_latitude,
+                longitude=item.lost_longitude,
+            ),
+            lost_date=item.lost_date,
+        )
+        for item in (await db.scalars(statement)).all()
+    ]
 
 
 @router.get("/{item_id}", response_model=LostItemResponse)

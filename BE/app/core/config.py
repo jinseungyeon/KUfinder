@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     s3_region: str = "ap-northeast-2"
     s3_endpoint_url: str | None = None
     s3_public_base_url: str | None = None
+    aws_access_key_id: str | None = None
+    aws_secret_access_key: str | None = None
+    aws_default_region: str | None = None
 
     max_image_bytes: int = 10 * 1024 * 1024
     max_image_pixels: int = 24_000_000

@@ -41,3 +41,8 @@ class MatchResultResponse(MatchResultCreate):
 class GeneratedMatchesResponse(CamelModel):
     lost_item_id: UUID
     results: list[MatchResultResponse]
+
+
+class GeneratedFoundMatchesResponse(CamelModel):
+    found_item_id: UUID
+    results: list[MatchResultResponse]

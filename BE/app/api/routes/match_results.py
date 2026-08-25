@@ -7,12 +7,13 @@ from sqlalchemy import select
 from app.api.deps import DBSession
 from app.db.models import FoundItem, LostItem, MatchResult
 from app.schemas.match_result import (
+    GeneratedFoundMatchesResponse,
     GeneratedMatchesResponse,
     MatchResultCreate,
     MatchResultResponse,
     MatchResultUpdate,
 )
-from app.services.matcher import generate_match_results
+from app.services.matcher import generate_match_results, generate_match_results_for_found
 
 router = APIRouter()
 
@@ -57,11 +58,14 @@ async def create_match_result(payload: MatchResultCreate, db: DBSession) -> Matc
 async def list_match_results(
     db: DBSession,
     lost_item_id: Annotated[uuid.UUID | None, Query(alias="lostItemId")] = None,
+    found_item_id: Annotated[uuid.UUID | None, Query(alias="foundItemId")] = None,
     minimum_score: Annotated[float, Query(alias="minimumScore", ge=0, le=1)] = 0,
 ) -> list[MatchResultResponse]:
     statement = select(MatchResult).where(MatchResult.score >= minimum_score)
     if lost_item_id:
         statement = statement.where(MatchResult.lost_item_id == lost_item_id)
+    if found_item_id:
+        statement = statement.where(MatchResult.found_item_id == found_item_id)
     statement = statement.order_by(MatchResult.score.desc()).limit(100)
     return [_to_response(result) for result in (await db.scalars(statement)).all()]
 
@@ -77,6 +81,21 @@ async def generate_for_lost_item(
     await db.commit()
     return GeneratedMatchesResponse(
         lost_item_id=lost.id,
+        results=[_to_response(result) for result in results],
+    )
+
+
+@router.post("/generate/found/{found_item_id}", response_model=GeneratedFoundMatchesResponse)
+async def generate_for_found_item(
+    found_item_id: uuid.UUID, db: DBSession
+) -> GeneratedFoundMatchesResponse:
+    found = await db.get(FoundItem, found_item_id)
+    if found is None:
+        raise HTTPException(status_code=404, detail="습득물 정보를 찾을 수 없습니다.")
+    results = await generate_match_results_for_found(db, found)
+    await db.commit()
+    return GeneratedFoundMatchesResponse(
+        found_item_id=found.id,
         results=[_to_response(result) for result in results],
     )
 

@@ -41,3 +41,10 @@ class LostItemUpdate(CamelModel):
 class LostItemResponse(LostItemCreate):
     id: UUID
     created_at: datetime
+
+
+class LostItemMapResponse(CamelModel):
+    id: UUID
+    category: ItemCategory
+    lost_location: Location
+    lost_date: datetime

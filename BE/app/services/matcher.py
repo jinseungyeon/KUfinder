@@ -136,3 +136,41 @@ async def generate_match_results(db: AsyncSession, lost: LostItem) -> list[Match
 
     await db.flush()
     return results
+
+
+async def generate_match_results_for_found(db: AsyncSession, found: FoundItem) -> list[MatchResult]:
+    settings = get_settings()
+    await db.execute(delete(MatchResult).where(MatchResult.found_item_id == found.id))
+    lost_items = list(
+        (
+            await db.scalars(
+                select(LostItem)
+                .order_by(LostItem.lost_date.desc())
+                .limit(settings.match_candidate_limit)
+            )
+        ).all()
+    )
+
+    ranked = sorted(
+        ((lost, score_pair(lost, found)) for lost in lost_items),
+        key=lambda pair: pair[1].score,
+        reverse=True,
+    )
+    results: list[MatchResult] = []
+    for lost, match_score in ranked:
+        if match_score.score < settings.minimum_match_score:
+            continue
+        result = MatchResult(
+            lost_item_id=lost.id,
+            found_item_id=found.id,
+            score=match_score.score,
+            reasons=match_score.reasons,
+            question=match_score.question,
+        )
+        db.add(result)
+        results.append(result)
+        if len(results) >= settings.match_result_limit:
+            break
+
+    await db.flush()
+    return results

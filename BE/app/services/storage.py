@@ -53,8 +53,13 @@ class S3Storage(StorageService):
             raise RuntimeError("S3_PUBLIC_BASE_URL is required when STORAGE_BACKEND=s3")
         self.bucket = settings.s3_bucket
         self.public_base_url = settings.s3_public_base_url.rstrip("/")
+        region_name = settings.aws_default_region or settings.s3_region
         self.client = boto3.client(
-            "s3", region_name=settings.s3_region, endpoint_url=settings.s3_endpoint_url
+            "s3",
+            region_name=region_name,
+            endpoint_url=settings.s3_endpoint_url,
+            aws_access_key_id=settings.aws_access_key_id,
+            aws_secret_access_key=settings.aws_secret_access_key,
         )
 
     async def save(self, item_id: uuid.UUID, data: bytes, extension: str, content_type: str) -> str:
