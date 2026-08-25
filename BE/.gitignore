@@ -7,4 +7,5 @@ __pycache__/
 htmlcov/
 .coverage
 uploads/
-
+*.egg-info/
+build/
