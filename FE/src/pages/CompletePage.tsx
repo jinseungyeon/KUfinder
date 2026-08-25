@@ -20,7 +20,7 @@ export default function CompletePage() {
           <div className="mt-7 space-y-4 rounded-2xl bg-zinc-50 p-5">
             <div><div className="text-xs font-semibold text-zinc-400">습득 장소</div><div className="mt-1 flex items-center gap-2 font-bold"><MapPin size={17} />{item.foundLocation.name}</div></div>
             <div><div className="text-xs font-semibold text-zinc-400">보관 장소</div><div className="mt-1 font-bold">{item.storagePlace ?? '습득자 직접 보관'}</div></div>
-            <div><div className="text-xs font-semibold text-zinc-400">연락 방법</div><div className="mt-1 font-bold">{item.contact ?? 'KU Finder 채팅'}</div></div>
+            <div><div className="text-xs font-semibold text-zinc-400">연락 방법</div><div className="mt-1 font-bold">{item.contact?.public ? item.contact.detail : 'KU Finder 채팅'}</div></div>
           </div>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">

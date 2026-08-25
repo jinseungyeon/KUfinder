@@ -13,3 +13,14 @@ export async function getMatches(lostItemId: string): Promise<MatchResult[]> {
   if (!response.ok) throw new Error('매칭 결과를 불러오지 못했습니다.')
   return response.json()
 }
+
+export async function getMatchesForFoundItem(foundItemId: string): Promise<MatchResult[]> {
+  if (!API_BASE_URL) {
+    await new Promise((resolve) => setTimeout(resolve, 900))
+    return mockMatchResults.filter((match) => String(match.foundItemId) === foundItemId)
+  }
+
+  const response = await fetch(`${API_BASE_URL}/matches/found-items/${foundItemId}`)
+  if (!response.ok) throw new Error('매칭 결과를 불러오지 못했습니다.')
+  return response.json()
+}

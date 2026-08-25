@@ -1,12 +1,11 @@
-import { ImagePlus, X } from 'lucide-react'
+import { Camera, ImagePlus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 interface Props {
-  required?: boolean
   onChange: (file?: File) => void
 }
 
-export default function ImageUploader({ required = false, onChange }: Props) {
+export default function ImageUploader({ onChange }: Props) {
   const [file, setFile] = useState<File>()
   const [preview, setPreview] = useState<string>()
 
@@ -27,20 +26,33 @@ export default function ImageUploader({ required = false, onChange }: Props) {
 
   return (
     <div>
-      <span className="label">사진 {required ? '(필수)' : '(선택)'}</span>
+      <span className="label">사진 (선택)</span>
       {!preview ? (
-        <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 text-center transition hover:border-ku-500 hover:bg-ku-50">
-          <ImagePlus className="mb-2 text-ku-700" />
-          <span className="font-semibold">사진 추가</span>
-          <span className="mt-1 text-xs text-zinc-500">JPG, PNG 등 이미지 파일</span>
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            required={required}
-            onChange={(e) => update(e.target.files?.[0])}
-          />
-        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 text-center transition hover:border-ku-500 hover:bg-ku-50">
+            <ImagePlus className="mb-2 text-ku-700" />
+            <span className="font-semibold">사진 선택</span>
+            <span className="mt-1 text-xs text-zinc-500">JPG, PNG 등 이미지 파일</span>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => update(e.target.files?.[0])}
+            />
+          </label>
+          <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 text-center transition hover:border-ku-500 hover:bg-ku-50">
+            <Camera className="mb-2 text-ku-700" />
+            <span className="font-semibold">사진 촬영</span>
+            <span className="mt-1 text-xs text-zinc-500">카메라로 촬영하기</span>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => update(e.target.files?.[0])}
+            />
+          </label>
+        </div>
       ) : (
         <div className="relative overflow-hidden rounded-2xl border border-zinc-200">
           <img src={preview} alt="업로드 미리보기" className="h-56 w-full object-cover" />

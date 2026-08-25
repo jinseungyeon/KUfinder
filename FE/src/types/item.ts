@@ -1,6 +1,7 @@
 export type ItemCategory =
   | 'wallet'
-  | 'electronics'
+  | 'smartphone'
+  | 'headphones'
   | 'clothing'
   | 'bag'
   | 'accessory'
@@ -10,30 +11,39 @@ export interface LocationInfo {
   name: string
   latitude: number
   longitude: number
+  description?: string
+}
+
+export interface ContactInfo {
+  public: 0 | 1
+  detail: string
 }
 
 export interface FoundItem {
   id: number
+  createdAt: string
   category: ItemCategory
   description: string
   imageUrl?: string
   foundLocation: LocationInfo
-  foundAt: string
-  contact?: string
+  foundDate: string
   storagePlace?: string
+  contact?: ContactInfo
 }
 
 export interface LostItem {
   id?: number
+  createdAt?: string
   category: ItemCategory
   description: string
   imageUrl?: string
   lostLocation: LocationInfo
-  lostAt?: string
-  contact?: string
+  lostDate: string
+  contact?: ContactInfo
 }
 
 export interface MatchResult {
+  lostItemId: number | string
   foundItemId: number
   score: number
   reasons: string[]
@@ -42,7 +52,8 @@ export interface MatchResult {
 
 export const CATEGORY_LABEL: Record<ItemCategory, string> = {
   wallet: '지갑/카드',
-  electronics: '전자기기',
+  smartphone: '스마트폰',
+  headphones: '이어폰',
   clothing: '의류',
   bag: '가방',
   accessory: '액세서리',

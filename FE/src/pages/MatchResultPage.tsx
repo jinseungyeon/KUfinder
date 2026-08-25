@@ -1,35 +1,100 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowRight, MapPin, Sparkles } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { getMatches } from '../api/matching'
+import { ArrowRight, CheckCircle2, MapPin, Sparkles } from 'lucide-react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { getMatches, getMatchesForFoundItem } from '../api/matching'
 import BackButton from '../components/BackButton'
 import CategoryBadge from '../components/CategoryBadge'
-import { mockFoundItems } from '../mock/items'
+import { mockFoundItems, mockLostItems } from '../mock/items'
 import type { MatchResult } from '../types/item'
 
 export default function MatchResultPage() {
   const { lostItemId = 'demo' } = useParams()
+  const [params] = useSearchParams()
   const navigate = useNavigate()
   const [matches, setMatches] = useState<MatchResult[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [index, setIndex] = useState(0)
   const [answer, setAnswer] = useState('')
+  const foundItemId = params.get('foundItemId')
+  const isFoundFlow = params.get('source') === 'found' && Boolean(foundItemId)
 
-  useEffect(() => { getMatches(lostItemId).then(setMatches) }, [lostItemId])
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    setError('')
+    setIndex(0)
+    const request = isFoundFlow && foundItemId ? getMatchesForFoundItem(foundItemId) : getMatches(lostItemId)
+    request
+      .then((result) => {
+        if (!active) return
+        setMatches(result)
+      })
+      .catch(() => {
+        if (!active) return
+        setError('매칭 결과를 불러오지 못했습니다.')
+        setMatches([])
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [foundItemId, isFoundFlow, lostItemId])
 
   const current = matches[index]
-  const item = useMemo(() => current ? mockFoundItems.find((x) => x.id === current.foundItemId) : undefined, [current])
+  const item = useMemo(() => {
+    if (!current) return undefined
+    return isFoundFlow
+      ? mockLostItems.find((x) => String(x.id) === String(current.lostItemId))
+      : mockFoundItems.find((x) => x.id === current.foundItemId)
+  }, [current, isFoundFlow])
 
-  if (!current || !item) return <main className="content-wrap"><BackButton /><div className="card p-8 text-center">매칭 결과를 불러오는 중...</div></main>
+  if (loading) {
+    return <main className="content-wrap"><BackButton /><div className="card p-8 text-center">매칭 결과를 불러오는 중...</div></main>
+  }
+
+  if (error) {
+    return <main className="content-wrap"><BackButton /><div className="card p-8 text-center text-zinc-700">{error}</div></main>
+  }
+
+  if (!matches.length) {
+    return (
+      <main className="content-wrap max-w-2xl">
+        <BackButton />
+        <section className="card p-8 text-center sm:p-10">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-ku-50 text-ku-700">
+            <CheckCircle2 size={34} />
+          </div>
+          <h1 className="mt-5 text-2xl font-black">
+            {isFoundFlow ? '매칭되는 분실물이 없어 지도에 등록되었습니다' : '매칭되는 습득물이 없어 지도에 등록되었습니다'}
+          </h1>
+          <p className="mt-3 leading-7 text-zinc-600">
+            {isFoundFlow
+              ? '등록한 습득물은 지도에서 확인할 수 있고, 이후 비슷한 분실 신고가 들어오면 다시 연결할 수 있습니다.'
+              : '등록한 분실물은 지도에서 확인할 수 있고, 이후 비슷한 습득물이 들어오면 다시 연결할 수 있습니다.'}
+          </p>
+          <button className="btn-primary mx-auto mt-7" onClick={() => navigate('/map')}>지도에서 보기</button>
+        </section>
+      </main>
+    )
+  }
+
+  if (!current || !item) return <main className="content-wrap"><BackButton /><div className="card p-8 text-center">매칭 후보 정보를 찾지 못했습니다.</div></main>
 
   const percent = Math.round(current.score * 100)
   const highConfidence = current.score >= 0.8
+  const itemLocation = 'lostLocation' in item ? item.lostLocation : item.foundLocation
+  const itemDate = 'lostDate' in item ? item.lostDate : item.foundDate
 
   return (
     <main className="content-wrap max-w-3xl">
       <BackButton />
       <div className="mb-6">
         <div className="flex items-center gap-2 text-ku-700"><Sparkles size={18} /><span className="text-sm font-bold">AI 검색 결과</span></div>
-        <h1 className="mt-2 text-3xl font-black">비슷한 물건을 찾았어요</h1>
+        <h1 className="mt-2 text-3xl font-black">{isFoundFlow ? '비슷한 분실 신고를 찾았어요' : '비슷한 물건을 찾았어요'}</h1>
         <p className="mt-2 text-zinc-600">후보 {index + 1} / {matches.length}</p>
       </div>
 
@@ -47,8 +112,8 @@ export default function MatchResultPage() {
 
         <div className="space-y-6 p-6 sm:p-8">
           <div className="grid gap-3 rounded-2xl bg-zinc-50 p-5 sm:grid-cols-2">
-            <div><div className="text-xs font-semibold text-zinc-400">발견 장소</div><div className="mt-1 flex items-center gap-1.5 font-bold"><MapPin size={17} /> {item.foundLocation.name}</div></div>
-            <div><div className="text-xs font-semibold text-zinc-400">발견 날짜</div><div className="mt-1 font-bold">{item.foundAt}</div></div>
+            <div><div className="text-xs font-semibold text-zinc-400">{isFoundFlow ? '분실 장소' : '발견 장소'}</div><div className="mt-1 flex items-center gap-1.5 font-bold"><MapPin size={17} /> {itemLocation.name}</div></div>
+            <div><div className="text-xs font-semibold text-zinc-400">{isFoundFlow ? '분실 날짜' : '발견 날짜'}</div><div className="mt-1 font-bold">{itemDate}</div></div>
           </div>
 
           <div>
@@ -72,7 +137,18 @@ export default function MatchResultPage() {
 
           {highConfidence ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              <button className="btn-primary" onClick={() => navigate(`/matches/${lostItemId}/confirm?foundItemId=${item.id}`)}>내 물건 같아요 <ArrowRight size={18} /></button>
+              <button
+                className="btn-primary"
+                onClick={() => {
+                  if (isFoundFlow) {
+                    alert('분실자 연결 기능은 추후 백엔드/채팅 연결 예정입니다.')
+                    return
+                  }
+                  navigate(`/matches/${lostItemId}/confirm?foundItemId=${item.id}`)
+                }}
+              >
+                {isFoundFlow ? '연락처 보기' : '내 물건 같아요'} <ArrowRight size={18} />
+              </button>
               <button className="btn-secondary" onClick={() => setIndex((index + 1) % matches.length)}>다음 후보 보기</button>
             </div>
           ) : (

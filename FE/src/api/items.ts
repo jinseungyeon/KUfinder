@@ -14,7 +14,8 @@ export async function getFoundItems(): Promise<FoundItem[]> {
 export async function createFoundItem(payload: FormData) {
   if (!API_BASE_URL) {
     await new Promise((resolve) => setTimeout(resolve, 600))
-    return { id: Date.now(), ok: true }
+    const category = payload.get('category')
+    return { id: category === 'headphones' ? 1 : Date.now(), ok: true }
   }
 
   const response = await fetch(`${API_BASE_URL}/found-items`, {
