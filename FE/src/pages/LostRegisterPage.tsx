@@ -28,6 +28,7 @@ export default function LostRegisterPage() {
     e.preventDefault()
     if (!category) return alert('카테고리를 선택해주세요.')
     if (!description.trim()) return alert('물건 설명을 입력해주세요.')
+    if (!contact.trim()) return alert('연락 수단을 입력해주세요.')
     setLoading(true)
     try {
       const imageUrl = image ? await uploadImage(image) : undefined
@@ -58,15 +59,15 @@ export default function LostRegisterPage() {
       </div>
 
       <form onSubmit={submit} className="card space-y-6 p-6 sm:p-8">
-        <LocationSelector label="분실 추정 장소" value={location} onChange={setLocation} />
+        <LocationSelector label="분실 추정 장소 (필수)" value={location} onChange={setLocation} />
 
         <div>
-          <label className="label">분실 날짜</label>
+          <label className="label">분실 날짜 (필수)</label>
           <input className="input" type="date" required value={lostDate} onChange={(e) => setLostDate(e.target.value)} />
         </div>
 
         <div>
-          <label className="label">카테고리</label>
+          <label className="label">카테고리 (필수)</label>
           <select
             className={`input ${category ? 'text-zinc-900' : 'text-zinc-400'}`}
             required
@@ -79,15 +80,15 @@ export default function LostRegisterPage() {
         </div>
 
         <div>
-          <label className="label">물건 설명</label>
+          <label className="label">물건 설명 (필수)</label>
           <textarea className="input min-h-36 resize-y" required value={description} onChange={(e) => setDescription(e.target.value)} placeholder="예: 검정색 무선 이어폰, 케이스에 흰색 스티커가 붙어 있음" />
         </div>
 
         <ImageUploader onChange={setImage} />
 
         <div>
-          <label className="label">연락 수단</label>
-          <input className="input" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="예: 010-xxxx-xxxx / instagram ID / 카카오톡 오픈채팅" />
+          <label className="label">연락 수단 (필수)</label>
+          <input className="input" required value={contact} onChange={(e) => setContact(e.target.value)} placeholder="예: 010-xxxx-xxxx / instagram ID / 카카오톡 오픈채팅" />
           <label className="mt-3 flex items-center gap-2 text-sm text-zinc-600"><input type="checkbox" defaultChecked /> 매칭이 이루어졌을 때만 공개</label>
         </div>
 

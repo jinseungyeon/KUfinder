@@ -21,6 +21,7 @@ export default function FoundRegisterPage() {
   const [foundDate, setFoundDate] = useState(today)
   const [description, setDescription] = useState('')
   const [contact, setContact] = useState('')
+  const [contactPublic, setContactPublic] = useState(false)
   const [storagePlace, setStoragePlace] = useState('')
   const [image, setImage] = useState<File>()
   const [loading, setLoading] = useState(false)
@@ -29,6 +30,7 @@ export default function FoundRegisterPage() {
     e.preventDefault()
     if (!category) return alert('카테고리를 선택해주세요.')
     if (!image) return alert('습득물 사진을 등록해주세요.')
+    if (!contact.trim()) return alert('연락 수단을 입력해주세요.')
     setLoading(true)
     try {
       const imageUrl = await uploadImage(image)
@@ -43,7 +45,7 @@ export default function FoundRegisterPage() {
         },
         foundDate: dateToApiDateTime(foundDate),
         storagePlace: storagePlace || undefined,
-        contact: contact ? { public: true, detail: contact } : undefined,
+        contact: contact ? { public: contactPublic, detail: contact } : undefined,
       })
       navigate(`/matching?foundItemId=${result.id}`)
     } finally {
@@ -60,15 +62,15 @@ export default function FoundRegisterPage() {
       </div>
 
       <form onSubmit={submit} className="card space-y-6 p-6 sm:p-8">
-        <LocationSelector label="습득 장소" value={location} onChange={setLocation} />
+        <LocationSelector label="습득 장소 (필수)" value={location} onChange={setLocation} />
 
         <div>
-          <label className="label">습득 날짜</label>
+          <label className="label">습득 날짜 (필수)</label>
           <input className="input" type="date" required value={foundDate} onChange={(e) => setFoundDate(e.target.value)} />
         </div>
 
         <div>
-          <label className="label">카테고리</label>
+          <label className="label">카테고리 (필수)</label>
           <select
             className={`input ${category ? 'text-zinc-900' : 'text-zinc-400'}`}
             required
@@ -81,11 +83,11 @@ export default function FoundRegisterPage() {
         </div>
 
         <div>
-          <label className="label">상세 설명</label>
+          <label className="label">상세 설명 (필수)</label>
           <textarea className="input min-h-36 resize-y" required value={description} onChange={(e) => setDescription(e.target.value)} placeholder="색상, 브랜드, 스티커, 흠집 등 구별 가능한 특징을 적어주세요." />
         </div>
 
-        <ImageUploader onChange={setImage} />
+        <ImageUploader required onChange={setImage} />
 
         <div>
           <label className="label">보관장소 (선택)</label>
@@ -93,8 +95,13 @@ export default function FoundRegisterPage() {
         </div>
 
         <div>
-          <label className="label">연락 수단</label>
-          <input className="input" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="예: 010-xxxx-xxxx / instagram ID / 카카오톡 오픈채팅" />
+          <label className="label">연락 수단 (필수)</label>
+          <input className="input" required value={contact} onChange={(e) => setContact(e.target.value)} placeholder="예: 010-xxxx-xxxx / instagram ID / 카카오톡 오픈채팅" />
+          <label className="mt-3 flex items-center gap-2 text-sm font-semibold text-zinc-700">
+            <input type="checkbox" checked={contactPublic} onChange={(e) => setContactPublic(e.target.checked)} />
+            전체공개
+          </label>
+          <p className="mt-1 text-sm text-zinc-500">체크하지 않으면 매칭 시에만 공개됩니다.</p>
         </div>
 
         <button className="btn-primary w-full" disabled={loading}>{loading ? <><LoaderCircle className="animate-spin" size={18} /> 등록 중...</> : <><Sparkles size={18} /> AI로 찾아보기</>}</button>

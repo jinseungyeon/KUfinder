@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, CheckCircle2, MapPin, Sparkles } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2, MapPin, Sparkles } from 'lucide-react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { getFoundItem, getLostItem } from '../api/items'
 import { getMatches, getMatchesForFoundItem } from '../api/matching'
@@ -112,74 +112,103 @@ export default function MatchResultPage() {
   const highConfidence = current.score >= 0.8
   const itemLocation = 'lostLocation' in item ? item.lostLocation : item.foundLocation
   const itemDate = 'lostDate' in item ? item.lostDate : item.foundDate
+  const hasMultipleMatches = matches.length > 1
+  const goPrev = () => {
+    setAnswer('')
+    setIndex((index - 1 + matches.length) % matches.length)
+  }
+  const goNext = () => {
+    setAnswer('')
+    setIndex((index + 1) % matches.length)
+  }
 
   return (
     <main className="content-wrap max-w-3xl">
       <BackButton />
-      <div className="mb-6">
-        <div className="flex items-center gap-2 text-ku-700"><Sparkles size={18} /><span className="text-sm font-bold">AI 검색 결과</span></div>
-        <h1 className="mt-2 text-3xl font-black">{isFoundFlow ? '비슷한 분실 신고를 찾았어요' : '비슷한 물건을 찾았어요'}</h1>
-        <p className="mt-2 text-zinc-600">후보 {index + 1} / {matches.length}</p>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-ku-700"><Sparkles size={18} /><span className="text-sm font-bold">AI 검색 결과</span></div>
+          <h1 className="mt-2 text-3xl font-black">{isFoundFlow ? '비슷한 분실 신고를 찾았어요' : '비슷한 물건을 찾았어요'}</h1>
+          <p className="mt-2 text-zinc-600">후보 {index + 1} / {matches.length}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:min-w-64">
+          <button className="btn-secondary px-4 py-2.5 text-sm" disabled={!hasMultipleMatches} onClick={goPrev}>
+            <ArrowLeft size={17} /> 이전
+          </button>
+          <button className="btn-secondary px-4 py-2.5 text-sm" disabled={!hasMultipleMatches} onClick={goNext}>
+            다음 <ArrowRight size={17} />
+          </button>
+        </div>
       </div>
 
-      <section className="card overflow-hidden">
-        <div className="border-b border-zinc-100 p-6 sm:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="text-5xl font-black text-ku-700">{percent}%</div>
-              <div className="mt-1 font-semibold text-zinc-700">일치 가능성</div>
-            </div>
-            <CategoryBadge category={item.category} />
-          </div>
-          <div className="mt-6 h-3 overflow-hidden rounded-full bg-zinc-100"><div className="h-full rounded-full bg-ku-700" style={{ width: `${percent}%` }} /></div>
-        </div>
+      <div className="relative overflow-visible pr-0 sm:pr-8">
+        {matches.length > 1 && (
+          <>
+            <div className="absolute bottom-4 left-6 right-1 top-4 rounded-3xl border border-zinc-200 bg-zinc-100 shadow-sm sm:-right-4 sm:left-10" />
+            <div className="absolute bottom-8 left-12 right-0 top-8 rounded-3xl border border-zinc-200 bg-zinc-200 shadow-sm sm:-right-8 sm:left-20" />
+          </>
+        )}
 
-        <div className="space-y-6 p-6 sm:p-8">
-          <div className="grid gap-3 rounded-2xl bg-zinc-50 p-5 sm:grid-cols-2">
-            <div><div className="text-xs font-semibold text-zinc-400">{isFoundFlow ? '분실 장소' : '발견 장소'}</div><div className="mt-1 flex items-center gap-1.5 font-bold"><MapPin size={17} /> {itemLocation.name}</div></div>
-            <div><div className="text-xs font-semibold text-zinc-400">{isFoundFlow ? '분실 날짜' : '발견 날짜'}</div><div className="mt-1 font-bold">{itemDate}</div></div>
-          </div>
-
-          <div>
-            <h2 className="font-bold">AI가 비슷하다고 판단한 이유</h2>
-            <ul className="mt-3 space-y-2 text-sm text-zinc-600">
-              {current.reasons.map((reason) => <li key={reason} className="flex gap-2"><span className="text-ku-700">•</span>{reason}</li>)}
-            </ul>
-          </div>
-
-          {!highConfidence && current.question && (
-            <div className="rounded-2xl border border-ku-100 bg-ku-50 p-5">
-              <div className="text-sm font-bold text-ku-900">조금 더 확인이 필요해요</div>
-              <p className="mt-2 font-semibold">Q. {current.question}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {['있었다', '없었다', '모르겠다'].map((value) => (
-                  <button key={value} onClick={() => setAnswer(value)} className={`rounded-xl px-4 py-2 text-sm font-semibold ${answer === value ? 'bg-ku-700 text-white' : 'bg-white text-zinc-700'}`}>{value}</button>
-                ))}
+        <section className="card relative z-10 overflow-hidden">
+          <div className="border-b border-zinc-100 p-6 sm:p-8">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="text-5xl font-black text-ku-700">{percent}%</div>
+                <div className="mt-1 font-semibold text-zinc-700">일치 가능성</div>
               </div>
+              <CategoryBadge category={item.category} />
             </div>
-          )}
+            <div className="mt-6 h-3 overflow-hidden rounded-full bg-zinc-100"><div className="h-full rounded-full bg-ku-700" style={{ width: `${percent}%` }} /></div>
+          </div>
 
-          {highConfidence ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                className="btn-primary"
-                onClick={() => {
-                  if (isFoundFlow) {
-                    alert('분실자 연결 기능은 추후 백엔드/채팅 연결 예정입니다.')
-                    return
-                  }
-                  navigate(`/matches/${lostItemId}/confirm?foundItemId=${item.id}`)
-                }}
-              >
-                {isFoundFlow ? '연락처 보기' : '내 물건 같아요'} <ArrowRight size={18} />
-              </button>
-              <button className="btn-secondary" onClick={() => setIndex((index + 1) % matches.length)}>다음 후보 보기</button>
+          <div className="space-y-6 p-6 sm:p-8">
+            <div className="grid gap-3 rounded-2xl bg-zinc-50 p-5 sm:grid-cols-2">
+              <div><div className="text-xs font-semibold text-zinc-400">{isFoundFlow ? '분실 장소' : '발견 장소'}</div><div className="mt-1 flex items-center gap-1.5 font-bold"><MapPin size={17} /> {itemLocation.name}</div></div>
+              <div><div className="text-xs font-semibold text-zinc-400">{isFoundFlow ? '분실 날짜' : '발견 날짜'}</div><div className="mt-1 font-bold">{itemDate}</div></div>
             </div>
-          ) : (
-            <button className="btn-primary w-full" disabled={!answer} onClick={() => setIndex(0)}>답변 반영하고 다시 비교하기</button>
-          )}
-        </div>
-      </section>
+
+            <div>
+              <h2 className="font-bold">AI가 비슷하다고 판단한 이유</h2>
+              <ul className="mt-3 space-y-2 text-sm text-zinc-600">
+                {current.reasons.map((reason) => <li key={reason} className="flex gap-2"><span className="text-ku-700">•</span>{reason}</li>)}
+              </ul>
+            </div>
+
+            {!highConfidence && current.question && (
+              <div className="rounded-2xl border border-ku-100 bg-ku-50 p-5">
+                <div className="text-sm font-bold text-ku-900">조금 더 확인이 필요해요</div>
+                <p className="mt-2 font-semibold">Q. {current.question}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {['있었다', '없었다', '모르겠다'].map((value) => (
+                    <button key={value} onClick={() => setAnswer(value)} className={`rounded-xl px-4 py-2 text-sm font-semibold ${answer === value ? 'bg-ku-700 text-white' : 'bg-white text-zinc-700'}`}>{value}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      <div className="mt-3">
+        {highConfidence ? (
+          <button
+            className="btn-primary w-full"
+            onClick={() => {
+              if (isFoundFlow) {
+                alert('분실자 연결 기능은 추후 백엔드/채팅 연결 예정입니다.')
+                return
+              }
+              navigate(`/matches/${lostItemId}/confirm?foundItemId=${item.id}`)
+            }}
+          >
+            {isFoundFlow ? '연락처 보기' : '내 물건 같아요'} <ArrowRight size={18} />
+          </button>
+        ) : (
+          <button className="btn-primary w-full" disabled={!answer} onClick={() => setIndex(0)}>
+            답변 반영하고 다시 비교하기
+          </button>
+        )}
+      </div>
     </main>
   )
 }

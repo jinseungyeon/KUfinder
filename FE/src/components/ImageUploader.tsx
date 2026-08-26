@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 
 interface Props {
   onChange: (file?: File) => void
+  required?: boolean
 }
 
-export default function ImageUploader({ onChange }: Props) {
+export default function ImageUploader({ onChange, required = false }: Props) {
   const [file, setFile] = useState<File>()
   const [preview, setPreview] = useState<string>()
 
@@ -26,7 +27,7 @@ export default function ImageUploader({ onChange }: Props) {
 
   return (
     <div>
-      <span className="label">사진 (선택)</span>
+      <span className="label">사진 {required ? '(필수)' : '(선택)'}</span>
       {!preview ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 text-center transition hover:border-ku-500 hover:bg-ku-50">
