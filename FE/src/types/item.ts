@@ -51,7 +51,14 @@ export interface MatchResult {
   foundItemId: string
   score: number
   reasons: string[]
-  question?: string
+}
+
+export interface ConfirmedMatch {
+  lostItemId: string
+  foundItemId: string
+  lostContact?: ContactInfo
+  foundContact?: ContactInfo
+  storagePlace?: string
 }
 
 export const CATEGORY_LABEL: Record<ItemCategory, string> = {

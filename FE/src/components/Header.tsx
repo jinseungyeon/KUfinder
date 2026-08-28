@@ -16,6 +16,7 @@ export default function Header() {
           <NavLink to="/map" className={navClass}>지도</NavLink>
           <NavLink to="/lost/register" className={navClass}>분실물 찾기</NavLink>
           <NavLink to="/found/register" className={navClass}>습득물 등록</NavLink>
+          <NavLink to="/admin" className={navClass}>관리자</NavLink>
         </nav>
       </div>
     </header>

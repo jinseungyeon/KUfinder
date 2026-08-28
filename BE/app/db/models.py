@@ -105,3 +105,28 @@ class MatchResult(Base):
 
     lost_item: Mapped[LostItem] = relationship(back_populates="match_results")
     found_item: Mapped[FoundItem] = relationship(back_populates="match_results")
+
+
+class ImageEmbedding(Base):
+    __tablename__ = "image_embeddings"
+
+    image_url: Mapped[str] = mapped_column(String(500), primary_key=True)
+    model_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    embedding_dim: Mapped[int] = mapped_column(nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(ARRAY(Float), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class TextEmbedding(Base):
+    __tablename__ = "text_embeddings"
+
+    text_hash: Mapped[str] = mapped_column(String(64), primary_key=True)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    model_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    embedding_dim: Mapped[int] = mapped_column(nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(ARRAY(Float), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

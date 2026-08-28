@@ -39,7 +39,7 @@ def test_identical_pair_has_high_score_and_reasons() -> None:
     assert any("검정색" in reason for reason in result.reasons)
 
 
-def test_distant_old_different_item_has_lower_score_and_question() -> None:
+def test_distant_old_different_item_has_lower_score_without_question() -> None:
     similar = score_pair(make_lost_item(), make_found_item())
     different = score_pair(
         make_lost_item(),
@@ -52,4 +52,4 @@ def test_distant_old_different_item_has_lower_score_and_question() -> None:
         ),
     )
     assert different.score < similar.score
-    assert different.question is not None
+    assert different.question is None

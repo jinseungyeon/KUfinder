@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { getFoundItems, getLostItems } from '../api/items'
 import { CATEGORY_LABEL, type FoundItem, type ItemCategory, type LostItem } from '../types/item'
+import { formatKoreanDate } from '../utils/date'
 import { categoryIcon } from './CategoryBadge'
 
 type KakaoLatLng = {
@@ -314,7 +315,7 @@ export default function CampusMap({ filter = 'all' }: Props) {
         <dt class="text-zinc-500">${mode === 'found' ? '발견 장소' : '분실 장소'}</dt>
         <dd class="font-medium">${location.name}</dd>
         <dt class="text-zinc-500">${mode === 'found' ? '발견 날짜' : '분실 날짜'}</dt>
-        <dd class="font-medium">${getItemDate(selected)}</dd>
+        <dd class="font-medium">${formatKoreanDate(getItemDate(selected))}</dd>
         ${selected.contact?.public ? `<dt class="text-zinc-500">연락수단</dt><dd class="font-medium">${selected.contact.detail}</dd>` : ''}
       </dl>
       ${mode === 'lost'

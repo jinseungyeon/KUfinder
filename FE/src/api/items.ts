@@ -5,8 +5,31 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 const MOCK_FOUND_ELECTRONICS_ID = '11111111-1111-4111-8111-111111111111'
 const MOCK_LOST_ELECTRONICS_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 
+async function buildApiError(response: Response, fallback: string) {
+  let detail = ''
+  try {
+    const body = await response.json()
+    detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body)
+  } catch {
+    detail = await response.text().catch(() => '')
+  }
+  return new Error(`${fallback} (${response.status}${detail ? `: ${detail}` : ''})`)
+}
+
 type FoundItemCreatePayload = Omit<FoundItem, 'id' | 'createdAt'>
 type LostItemCreatePayload = Omit<LostItem, 'id' | 'createdAt'>
+type ListOptions = {
+  limit?: number
+  offset?: number
+}
+
+function buildListUrl(path: string, options?: ListOptions) {
+  const params = new URLSearchParams()
+  if (options?.limit) params.set('limit', String(options.limit))
+  if (options?.offset) params.set('offset', String(options.offset))
+  const query = params.toString()
+  return `${API_BASE_URL}${path}${query ? `?${query}` : ''}`
+}
 
 export async function uploadImage(image: File): Promise<string> {
   if (!API_BASE_URL) {
@@ -25,10 +48,14 @@ export async function uploadImage(image: File): Promise<string> {
   return result.imageUrl
 }
 
-export async function getFoundItems(): Promise<FoundItem[]> {
-  if (!API_BASE_URL) return mockFoundItems
+export async function getFoundItems(options?: ListOptions): Promise<FoundItem[]> {
+  if (!API_BASE_URL) {
+    const offset = options?.offset ?? 0
+    const limit = options?.limit ?? mockFoundItems.length
+    return mockFoundItems.slice(offset, offset + limit)
+  }
 
-  const response = await fetch(`${API_BASE_URL}/found-items`)
+  const response = await fetch(buildListUrl('/found-items', options))
   if (!response.ok) throw new Error('습득물 목록을 불러오지 못했습니다.')
   return response.json()
 }
@@ -41,14 +68,19 @@ export async function getFoundItem(id: string): Promise<FoundItem> {
   }
 
   const response = await fetch(`${API_BASE_URL}/found-items/${encodeURIComponent(id)}`)
+  if (!response.ok) throw await buildApiError(response, '습득물 정보를 불러오지 못했습니다.')
   if (!response.ok) throw new Error('습득물 정보를 불러오지 못했습니다.')
   return response.json()
 }
 
-export async function getLostItems(): Promise<LostItem[]> {
-  if (!API_BASE_URL) return mockLostItems
+export async function getLostItems(options?: ListOptions): Promise<LostItem[]> {
+  if (!API_BASE_URL) {
+    const offset = options?.offset ?? 0
+    const limit = options?.limit ?? mockLostItems.length
+    return mockLostItems.slice(offset, offset + limit)
+  }
 
-  const response = await fetch(`${API_BASE_URL}/lost-items`)
+  const response = await fetch(buildListUrl('/lost-items', options))
   if (!response.ok) throw new Error('분실물 목록을 불러오지 못했습니다.')
   return response.json()
 }
@@ -61,6 +93,7 @@ export async function getLostItem(id: string): Promise<LostItem> {
   }
 
   const response = await fetch(`${API_BASE_URL}/lost-items/${encodeURIComponent(id)}`)
+  if (!response.ok) throw await buildApiError(response, '분실물 정보를 불러오지 못했습니다.')
   if (!response.ok) throw new Error('분실물 정보를 불러오지 못했습니다.')
   return response.json()
 }
@@ -93,4 +126,30 @@ export async function createLostItem(payload: LostItemCreatePayload) {
   })
   if (!response.ok) throw new Error('분실물 등록에 실패했습니다.')
   return response.json()
+}
+
+export async function deleteFoundItem(id: string, token?: string): Promise<void> {
+  if (!API_BASE_URL) {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    return
+  }
+
+  const response = await fetch(`${API_BASE_URL}/found-items/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  })
+  if (!response.ok) throw await buildApiError(response, '습득물 삭제에 실패했습니다.')
+}
+
+export async function deleteLostItem(id: string, token?: string): Promise<void> {
+  if (!API_BASE_URL) {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    return
+  }
+
+  const response = await fetch(`${API_BASE_URL}/lost-items/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  })
+  if (!response.ok) throw await buildApiError(response, '분실물 삭제에 실패했습니다.')
 }

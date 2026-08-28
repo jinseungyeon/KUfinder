@@ -9,6 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.enums import ItemCategory
 from app.db.models import FoundItem, LostItem, MatchResult
+from app.services.vlm_retriever import (
+    cosine_similarity,
+    get_image_embedding,
+    get_text_embedding,
+)
 
 TOKEN_PATTERN = re.compile(r"[0-9A-Za-z가-힣]+")
 STOP_WORDS = {"분실", "습득", "물건", "있어요", "입니다", "같아요"}
@@ -94,10 +99,49 @@ def score_pair(lost: LostItem, found: FoundItem) -> MatchScore:
 
     score = category_score * 0.35 + text_score * 0.35 + location_score * 0.20 + date_score * 0.10
     score = max(0.0, min(1.0, score))
-    question = None
-    if score < get_settings().high_confidence_threshold:
-        question = _question_for(lost.category)
-    return MatchScore(score=score, reasons=reasons, question=question)
+    return MatchScore(score=score, reasons=reasons, question=None)
+
+
+async def score_pair_with_vlm(db: AsyncSession, lost: LostItem, found: FoundItem) -> MatchScore:
+    settings = get_settings()
+    base = score_pair(lost, found)
+    if not settings.vlm_enabled:
+        return base
+
+    lost_image_embedding = await get_image_embedding(db, lost.image_url)
+    found_image_embedding = await get_image_embedding(db, found.image_url)
+    lost_text_embedding = await get_text_embedding(db, lost.description)
+    found_text_embedding = await get_text_embedding(db, found.description)
+
+    weighted_scores: list[tuple[float, float]] = []
+    image_score = cosine_similarity(lost_image_embedding, found_image_embedding)
+    lost_text_to_found_image_score = cosine_similarity(lost_text_embedding, found_image_embedding)
+    found_text_to_lost_image_score = cosine_similarity(found_text_embedding, lost_image_embedding)
+
+    if image_score is not None:
+        weighted_scores.append((image_score, 0.60))
+    if lost_text_to_found_image_score is not None:
+        weighted_scores.append((lost_text_to_found_image_score, 0.25))
+    if found_text_to_lost_image_score is not None:
+        weighted_scores.append((found_text_to_lost_image_score, 0.15))
+    if not weighted_scores:
+        return base
+
+    total_weight = sum(weight for _, weight in weighted_scores)
+    vlm_score = sum(score * weight for score, weight in weighted_scores) / total_weight
+    normalized_vlm_score = (vlm_score + 1) / 2
+    score = (
+        base.score * (1 - settings.vlm_score_weight)
+        + normalized_vlm_score * settings.vlm_score_weight
+    )
+    reasons = list(base.reasons)
+    if normalized_vlm_score >= settings.vlm_reason_threshold:
+        reasons.append("이미지 특징이 유사함")
+    return MatchScore(
+        score=max(0.0, min(1.0, score)),
+        reasons=reasons,
+        question=None if score >= settings.high_confidence_threshold else base.question,
+    )
 
 
 async def generate_match_results(db: AsyncSession, lost: LostItem) -> list[MatchResult]:
@@ -113,11 +157,11 @@ async def generate_match_results(db: AsyncSession, lost: LostItem) -> list[Match
         ).all()
     )
 
-    ranked = sorted(
-        ((found, score_pair(lost, found)) for found in found_items),
-        key=lambda pair: pair[1].score,
-        reverse=True,
-    )
+    scored_pairs = []
+    for found in found_items:
+        scored_pairs.append((found, await score_pair_with_vlm(db, lost, found)))
+
+    ranked = sorted(scored_pairs, key=lambda pair: pair[1].score, reverse=True)
     results: list[MatchResult] = []
     for found, match_score in ranked:
         if match_score.score < settings.minimum_match_score:
@@ -151,11 +195,11 @@ async def generate_match_results_for_found(db: AsyncSession, found: FoundItem) -
         ).all()
     )
 
-    ranked = sorted(
-        ((lost, score_pair(lost, found)) for lost in lost_items),
-        key=lambda pair: pair[1].score,
-        reverse=True,
-    )
+    scored_pairs = []
+    for lost in lost_items:
+        scored_pairs.append((lost, await score_pair_with_vlm(db, lost, found)))
+
+    ranked = sorted(scored_pairs, key=lambda pair: pair[1].score, reverse=True)
     results: list[MatchResult] = []
     for lost, match_score in ranked:
         if match_score.score < settings.minimum_match_score:

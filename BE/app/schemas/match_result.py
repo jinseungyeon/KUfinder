@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import Field, field_validator
 
-from app.schemas.common import CamelModel, normalized_optional_text
+from app.schemas.common import CamelModel, Contact, normalized_optional_text
 
 
 class MatchResultCreate(CamelModel):
@@ -46,3 +46,11 @@ class GeneratedMatchesResponse(CamelModel):
 class GeneratedFoundMatchesResponse(CamelModel):
     found_item_id: UUID
     results: list[MatchResultResponse]
+
+
+class ConfirmedMatchResponse(CamelModel):
+    lost_item_id: UUID
+    found_item_id: UUID
+    lost_contact: Contact | None = None
+    found_contact: Contact | None = None
+    storage_place: str | None = None

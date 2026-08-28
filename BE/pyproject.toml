@@ -16,7 +16,7 @@ dependencies = [
   "pydantic-settings>=2.10,<3",
   "python-multipart>=0.0.20,<1",
   "sqlalchemy[asyncio]>=2.0.43,<2.2",
-  "uvicorn[standard]>=0.35,<1",
+  "uvicorn[standard]>=0.5,<1",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +25,15 @@ dev = [
   "pytest>=8.4,<9",
   "pytest-asyncio>=1.1,<2",
   "ruff>=0.12,<1",
+]
+vlm = [
+  "accelerate>=1.10,<2",
+  "einops>=0.8,<1",
+  "huggingface-hub<1.0",
+  "numpy>=2.0,<3",
+  "timm>=1.0,<2",
+  "torch>=2.5,<3",
+  "transformers==4.51.3",
 ]
 
 [tool.setuptools.packages.find]
@@ -37,6 +46,7 @@ asyncio_mode = "auto"
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+exclude = ["research"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

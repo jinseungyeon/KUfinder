@@ -1,3 +1,4 @@
+import logging
 import uuid
 from typing import Annotated
 
@@ -6,7 +7,9 @@ from sqlalchemy import select
 
 from app.api.deps import DBSession
 from app.db.models import FoundItem, LostItem, MatchResult
+from app.schemas.common import Contact
 from app.schemas.match_result import (
+    ConfirmedMatchResponse,
     GeneratedFoundMatchesResponse,
     GeneratedMatchesResponse,
     MatchResultCreate,
@@ -14,8 +17,11 @@ from app.schemas.match_result import (
     MatchResultUpdate,
 )
 from app.services.matcher import generate_match_results, generate_match_results_for_found
+from app.services.storage import get_storage
+from app.services.vlm_retriever import wait_for_item_embeddings
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 def _to_response(result: MatchResult) -> MatchResultResponse:
@@ -77,6 +83,7 @@ async def generate_for_lost_item(
     lost = await db.get(LostItem, lost_item_id)
     if lost is None:
         raise HTTPException(status_code=404, detail="분실물 정보를 찾을 수 없습니다.")
+    await wait_for_item_embeddings(db, lost.image_url, lost.description)
     results = await generate_match_results(db, lost)
     await db.commit()
     return GeneratedMatchesResponse(
@@ -92,12 +99,55 @@ async def generate_for_found_item(
     found = await db.get(FoundItem, found_item_id)
     if found is None:
         raise HTTPException(status_code=404, detail="습득물 정보를 찾을 수 없습니다.")
+    await wait_for_item_embeddings(db, found.image_url, found.description)
     results = await generate_match_results_for_found(db, found)
     await db.commit()
     return GeneratedFoundMatchesResponse(
         found_item_id=found.id,
         results=[_to_response(result) for result in results],
     )
+
+
+@router.post("/{lost_item_id}/{found_item_id}/confirm", response_model=ConfirmedMatchResponse)
+async def confirm_match(
+    lost_item_id: uuid.UUID,
+    found_item_id: uuid.UUID,
+    db: DBSession,
+) -> ConfirmedMatchResponse:
+    lost = await db.get(LostItem, lost_item_id)
+    found = await db.get(FoundItem, found_item_id)
+    if lost is None or found is None:
+        raise HTTPException(status_code=404, detail="매칭할 분실물 또는 습득물을 찾을 수 없습니다.")
+
+    lost_contact = (
+        Contact(public=lost.contact_public, detail=lost.contact_detail)
+        if lost.contact_public is not None and lost.contact_detail is not None
+        else None
+    )
+    found_contact = (
+        Contact(public=found.contact_public, detail=found.contact_detail)
+        if found.contact_public is not None and found.contact_detail is not None
+        else None
+    )
+    response = ConfirmedMatchResponse(
+        lost_item_id=lost.id,
+        found_item_id=found.id,
+        lost_contact=lost_contact,
+        found_contact=found_contact,
+        storage_place=found.storage_place,
+    )
+    image_urls = [image_url for image_url in (lost.image_url, found.image_url) if image_url]
+
+    await db.delete(lost)
+    await db.delete(found)
+    await db.commit()
+    storage = get_storage()
+    for image_url in image_urls:
+        try:
+            await storage.delete(image_url)
+        except Exception:
+            logger.exception("Failed to delete matched item image: %s", image_url)
+    return response
 
 
 @router.get("/{lost_item_id}/{found_item_id}", response_model=MatchResultResponse)

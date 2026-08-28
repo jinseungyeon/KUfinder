@@ -2,7 +2,9 @@ import asyncio
 import io
 import uuid
 from abc import ABC, abstractmethod
+from functools import lru_cache
 from pathlib import Path
+from urllib.parse import urlparse
 
 import boto3
 
@@ -37,27 +39,32 @@ class LocalStorage(StorageService):
         return key
 
     async def delete(self, object_key: str) -> None:
-        path = self.root / object_key
+        path = self.root / self._object_key(object_key)
         if path.is_file():
             await asyncio.to_thread(path.unlink)
 
     async def url(self, object_key: str) -> str:
+        if object_key.startswith("/media/") or object_key.startswith("http"):
+            return object_key
         return f"/media/{object_key}"
+
+    def _object_key(self, value: str) -> str:
+        return value.removeprefix("/media/").lstrip("/")
 
 
 class S3Storage(StorageService):
     def __init__(self, settings: Settings):
         if not settings.s3_bucket:
             raise RuntimeError("S3_BUCKET is required when STORAGE_BACKEND=s3")
-        if not settings.s3_public_base_url:
-            raise RuntimeError("S3_PUBLIC_BASE_URL is required when STORAGE_BACKEND=s3")
         self.bucket = settings.s3_bucket
-        self.public_base_url = settings.s3_public_base_url.rstrip("/")
-        region_name = settings.aws_default_region or settings.s3_region
+        self.public_base_url = (
+            settings.s3_public_base_url.rstrip("/") if settings.s3_public_base_url else None
+        )
+        region_name = settings.s3_region or settings.aws_default_region
         self.client = boto3.client(
             "s3",
             region_name=region_name,
-            endpoint_url=settings.s3_endpoint_url,
+            endpoint_url=settings.s3_endpoint_url or f"https://s3.{region_name}.amazonaws.com",
             aws_access_key_id=settings.aws_access_key_id,
             aws_secret_access_key=settings.aws_secret_access_key,
         )
@@ -74,12 +81,34 @@ class S3Storage(StorageService):
         return key
 
     async def delete(self, object_key: str) -> None:
-        await asyncio.to_thread(self.client.delete_object, Bucket=self.bucket, Key=object_key)
+        key = self._object_key(object_key)
+        await asyncio.to_thread(self.client.delete_object, Bucket=self.bucket, Key=key)
 
     async def url(self, object_key: str) -> str:
-        return f"{self.public_base_url}/{object_key}"
+        key = self._object_key(object_key)
+
+        def create_url() -> str:
+            return self.client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.bucket, "Key": key},
+                ExpiresIn=3600,
+            )
+
+        return await asyncio.to_thread(create_url)
+
+    def _object_key(self, value: str) -> str:
+        if self.public_base_url and value.startswith(self.public_base_url):
+            return value.removeprefix(self.public_base_url).lstrip("/")
+        if value.startswith("http://") or value.startswith("https://"):
+            path = urlparse(value).path.lstrip("/")
+            bucket_prefix = f"{self.bucket}/"
+            if path.startswith(bucket_prefix):
+                return path.removeprefix(bucket_prefix)
+            return path
+        return value.lstrip("/")
 
 
+@lru_cache(maxsize=1)
 def get_storage() -> StorageService:
     settings = get_settings()
     if settings.storage_backend == "s3":

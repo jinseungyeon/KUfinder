@@ -1,7 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import Header from './components/Header'
-import CompletePage from './pages/CompletePage'
-import ConfirmItemPage from './pages/ConfirmItemPage'
+import AdminPage from './pages/AdminPage'
 import FoundRegisterPage from './pages/FoundRegisterPage'
 import HomePage from './pages/HomePage'
 import LostRegisterPage from './pages/LostRegisterPage'
@@ -21,8 +20,7 @@ export default function App() {
         <Route path="/lost/register" element={<LostRegisterPage />} />
         <Route path="/matching" element={<MatchingPage />} />
         <Route path="/matches/:lostItemId" element={<MatchResultPage />} />
-        <Route path="/matches/:lostItemId/confirm" element={<ConfirmItemPage />} />
-        <Route path="/complete" element={<CompletePage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </div>
